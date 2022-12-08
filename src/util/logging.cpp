@@ -5,6 +5,7 @@
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/console.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/exception/diagnostic_information.hpp>
 
 #include "logging.h"
 
@@ -12,7 +13,7 @@ namespace logging = boost::log;
 
 StatusCode initLogger(const boost::log::trivial::severity_level logLevel)
 {
-  StatusCode status = StatusCode::NoError
+  StatusCode status = StatusCode::NoError;
   try {
     logging::register_simple_formatter_factory<
       logging::trivial::severity_level, char>("Severity");

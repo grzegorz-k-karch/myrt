@@ -3,8 +3,8 @@
 
 #include <string>
 
-#include "StatusCode.h"
-#include "Scene.h"
+#include "util/statusCode.h"
+#include "scene.h"
 
 StatusCode checkScene(std::string sceneFile);
 StatusCode parseScene(std::string sceneFile, Scene& scene);

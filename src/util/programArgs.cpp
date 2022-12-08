@@ -4,8 +4,8 @@
 #include <string>
 #include <boost/program_options.hpp>
 
-#include "args_parse.h"
-#include "StatusCode.h"
+#include "programArgs.h"
+#include "statusCode.h"
 
 namespace po = boost::program_options;
 

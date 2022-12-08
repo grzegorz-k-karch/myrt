@@ -19,16 +19,16 @@ int main(int argc, char** argv)
   /// default "info" value).
   status = initLogger(programArgs.logLevel);
   if (status != StatusCode::NoError) {
-    LOG_TRIVIAL(error) << "Logging error. Exiting.";
+    std::cerr << "Logging error. Exiting.";
     return -1;
   }
 
-  /// Check if scene contains camera and at least one renderable object
-  status = checkScene(programArgs.sceneFilePath);
-  if (status != StatusCode::NoError) {
-    LOG_TRIVIAL(error) << "Scene invalid. Exiting.";
-    return -1;
-  }
+  // /// Check if scene contains camera and at least one renderable object
+  // status = checkScene(programArgs.sceneFilePath);
+  // if (status != StatusCode::NoError) {
+  //   LOG_TRIVIAL(error) << "Scene invalid. Exiting.";
+  //   return -1;
+  // }
 
   /// Parse scene file
   // setup scene on device

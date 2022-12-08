@@ -4,7 +4,7 @@
 #include <string>
 #include <boost/log/trivial.hpp>
 
-#include "StatusCode.h"
+#include "statusCode.h"
 
 struct ProgramArgs {
   std::string sceneFilePath;
