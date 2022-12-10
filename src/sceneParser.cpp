@@ -15,5 +15,17 @@ StatusCode checkScene(std::string sceneFile)
 
 StatusCode parseScene(std::string sceneFile, Scene &scene)
 {
+  StatusCode status = StatusCode::NoError;
+
+  /// Check if scene contains camera and at least one renderable object
+  status = checkScene(programArgs.sceneFilePath);
+  if (status != StatusCode::NoError) {
+    LOG_TRIVIAL(error) << "Scene invalid.";
+  }
+
+  if (status == StatusCode::NoError) {
+
+  }
+
   return StatusCode::NoError;
 }

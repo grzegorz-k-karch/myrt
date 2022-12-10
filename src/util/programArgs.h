@@ -7,8 +7,8 @@
 #include "statusCode.h"
 
 struct ProgramArgs {
-  std::string sceneFilePath;
-  std::string pictureFilePath;
+  std::string sceneFile;
+  std::string pictureFile;
   int sampleCount;
   int imageWidth;
   int imageHeight;

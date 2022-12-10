@@ -10,13 +10,13 @@
 namespace po = boost::program_options;
 
 void add_generic_options(po::options_description& generic,
-			 std::string* configFilePath,
+			 std::string* configFile,
 			 std::string* logLevel)
 {
   generic.add_options()
     ("help,h", "Help screen")
     ("config,c",
-     po::value<std::string>(configFilePath),
+     po::value<std::string>(configFile),
      "Filename for the program config file")
     ("log-level",
      po::value<std::string>(logLevel)->default_value("info"),
@@ -29,7 +29,7 @@ void add_config_options(po::options_description& config,
 {
   config.add_options()
     ("scene",
-     po::value<std::string>(&(args.sceneFilePath))->required(),
+     po::value<std::string>(&(args.sceneFile))->required(),
      "File with scene description")
     ("num-samples,s",
      po::value<int>(&(args.sampleCount))->default_value(4),
@@ -44,7 +44,7 @@ void add_config_options(po::options_description& config,
      po::value<int>(&(args.imageHeight))->default_value(400),
      "Vertical resolution")
     ("output,o",
-     po::value<std::string>(&(args.pictureFilePath))->required(),
+     po::value<std::string>(&(args.pictureFile))->required(),
      "Filename for the output picture")
     ;
 }

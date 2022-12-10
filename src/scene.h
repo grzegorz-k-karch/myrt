@@ -2,7 +2,8 @@
 #define SCENE_H
 
 
-class Scene {};
-
+class Scene {
+  
+};
 
 #endif//SCENE_H
