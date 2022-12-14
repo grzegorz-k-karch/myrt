@@ -40,10 +40,36 @@ typedef MyVector Vector;
 typedef MyNormal Normal;
 
 
-static bool myComparison(const std::pair<int, Float>& a,
-			 const std::pair<int, Float>& b)
+static bool pairComparison(const std::pair<int, Float>& a,
+			   const std::pair<int, Float>& b)
 {
   return a.second < b.second;
+}
+
+void sortSpectrum(const std::vector<Float> &lambda,
+                  const std::vector<Float> &value,
+		  std::vector<Float> &sortedLambda,
+		  std::vector<Float> &sortedValue)
+{
+  std::vector<int> indices(lambda.size());
+  for (int i = 0; i < lambda.size(); i++) {
+    indices[i] = i;
+  }
+  std::vector<std::pair<int, Float>> enum_lambda;
+  enum_lambda.reserve(lambda.size());
+
+  std::transform(lambda.begin(), lambda.end(), indices.begin(),
+		 std::back_inserter(enum_lambda),
+		 [](int a, Float b) {return std::make_pair(a,b);});
+  std::sort(enum_lambda.begin(), enum_lambda.end(), pairComparison);
+
+  sortedValue.reserve(lambda.size());
+  sortedLambda.reserve(lambda.size());
+  for (auto& el : enum_lambda) {
+    int idx = el.first;
+    sortedValue.push_back(value[idx]);
+    sortedLambda.push_back(lambda[idx]);
+  }
 }
 
 
@@ -73,17 +99,37 @@ public:
   MySpectrum(const std::vector<Float>& lambda,
 	     const std::vector<Float>& value) {
     if (!sorted(lambda)) {
-      std::vector<int> indices(lambda.size());
-      for (int i = 0; i < lambda.size(); i++) {
-	indices[i] = i;
-      }
-      std::vector<std::pair<int, Float>> enum_lambda;
+      sortSpectrum(lambda, value);
+      const int len = lambda.size();
+      for (int i = 0; i < len-1; i++) {
+	Float l0 = lambda[i];
+	Float l1 = lambda[i+1];
+	Float v0 = value[i];
+	Float v1 = value[i+1];
 
-      enum_lambda.reserve(lambda.size());
-      std::transform(lambda.begin(), lambda.end(), indices.begin(),
-                     std::back_inserter(enum_lambda),
-		     [](int a, Float b) {return std::make_pair(a,b);});
-      std::sort(enum_lambda.begin(), enum_lambda.end(), myComparison);
+	/// Find start/end indices of c intervals overlapped by piece (l0,l1).
+	/// In case when idx0 == idx1 a piece is within one interval.
+	/// Figure 5.2 from pbr-book
+	int idx0 = 0;
+	int idx1 = 0;
+	Float specLambda0 = lambdaMin;
+	Float specLambda1 = lambdaMin;
+
+	while (idx0 < numSamples && specLambda0 < l0) {
+	  idx0++;
+	  specLambda0 = lerp(lambdaMin, lambdaMax, Float(idx0)/numSamples);
+	}
+	idx0--;
+	while (idx1 < numSamples && specLambda1 < l1) {
+	  idx1++;
+	  specLambda1 = lerp(lambdaMin, lambdaMax, Float(idx1)/numSamples);
+	}
+	idx1--;
+
+	for (int i = idx0; i <= idx1; i++) {
+	  c[i] +=
+	}
+      }
     }
   }
 
