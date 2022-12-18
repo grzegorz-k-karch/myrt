@@ -5,7 +5,7 @@ project(myrt LANGUAGES CXX CUDA)
 find_package(Boost 1.74 REQUIRED COMPONENTS log_setup log)
 find_package(PNGwriter 0.7.0)
 
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode arch=compute_87,code=sm_86 -rdc=true")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode arch=compute_75,code=sm_75 -rdc=true")
 set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -G")
 
 file(GLOB_RECURSE CU_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cu)

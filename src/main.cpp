@@ -2,6 +2,9 @@
 #include "util/programArgs.h"
 #include "util/statusCode.h"
 #include "util/logging.h"
+#include "scene.h"
+#include "sceneParser.h"
+#include "data_types.h"
 
 int main(int argc, char** argv)
 {
@@ -19,6 +22,8 @@ int main(int argc, char** argv)
     Scene scene;
     status = parseScene(programArgs.sceneFile, scene);
   }
+
+  Spectrum spec;
   
   // setup scene on device
   // render

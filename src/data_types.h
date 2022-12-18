@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <utility>
 
+#include "external/cuda-samples/helper_math.h"
+
 typedef float Float;
 
 /// Entities without any suffix consist of three floats by default
@@ -127,25 +129,35 @@ public:
       Float specLambda1 = lambdaMin;
 
       while (idx0 < numSamples && specLambda0 < l0) {
-	idx0++;
-	specLambda0 = lerp(lambdaMin, lambdaMax, Float(idx0)/numSamples);
+	      idx0++;
+	      specLambda0 = lerp(lambdaMin, lambdaMax, Float(idx0)/numSamples);
       }
       idx0--;
       while (idx1 < numSamples && specLambda1 < l1) {
-	idx1++;
-	specLambda1 = lerp(lambdaMin, lambdaMax, Float(idx1)/numSamples);
+      	idx1++;
+	      specLambda1 = lerp(lambdaMin, lambdaMax, Float(idx1)/numSamples);
       }
       idx1--;
 
       Float v0 = sortedValue[i];
       Float v1 = sortedValue[i+1];
 
-      Float t0 = v0;
-      Float t1;
+      const Float dc = (lambdaMax - lambdaMin)/numSamples;
 
       for (int i = idx0; i <= idx1; i++) {
+	      Float specLambda = lerp(lambdaMin, lambdaMax, Float(i)/numSamples);
+      	/// Compute location of current coefficient range relative to
+      	/// piece (l0, l1).
+      	Float a = (specLambda - l0)/(l1 - l0);
+        Float b = (specLambda + dc - l0)/(l1 - l0);
 
-	c[i] += (t0 + t1)/Float(2)*dL;
+        Float minReg = std::max(a, Float(0));
+        Float maxReg = std::min(b, Float(1));
+
+        Float t0 = lerp(v0, v1, minReg); 
+        Float t1 = lerp(v0, v1, maxReg);
+
+	      c[i] += (t0 + t1)/Float(2)*dc;
       }
     }
     if (!lambdaIsSorted) {
