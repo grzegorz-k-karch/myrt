@@ -5,6 +5,7 @@
 #include "scene.h"
 #include "sceneParser.h"
 #include "data_types.h"
+#include "spectrum.h"
 
 int main(int argc, char** argv)
 {

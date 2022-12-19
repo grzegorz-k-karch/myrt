@@ -5,6 +5,11 @@ project(myrt LANGUAGES CXX CUDA)
 find_package(Boost 1.74 REQUIRED COMPONENTS log_setup log)
 find_package(PNGwriter 0.7.0)
 
+# resolves error:
+# /usr/include/c++/11/cstdlib:75:15: fatal error: stdlib.h: No such file or directory
+#   75 | #include_next <stdlib.h>
+set(NO_SYSTEM_FROM_IMPORTED ON)
+
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -gencode arch=compute_75,code=sm_75 -rdc=true")
 set(CMAKE_CUDA_FLAGS_DEBUG "${CMAKE_CUDA_FLAGS_DEBUG} -G")
 
@@ -14,7 +19,7 @@ file(GLOB_RECURSE CPP_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 add_executable(myrt ${CU_FILES} ${CPP_FILES})
 
 set_target_properties(myrt PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-target_compile_features(myrt PUBLIC cxx_std_17)
+# target_compile_features(myrt PUBLIC cxx_std_17)
 
 target_include_directories(myrt PRIVATE "/usr/local/cuda/include")
 
