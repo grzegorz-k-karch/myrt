@@ -5,7 +5,6 @@
 #include <vector>
 #include <vector_types.h>
 #include <algorithm>
-#include <iostream>
 
 #include "external/cuda-samples/helper_math.h"
 #include "data_types.h"
@@ -29,7 +28,7 @@ void sortSpectrum(const std::vector<Float> &lambda,
   std::vector<std::pair<int, Float>> enum_lambda;
   enum_lambda.reserve(lambda.size());
 
-  std::transform(lambda.begin(), lambda.end(), indices.begin(),
+  std::transform(indices.begin(), indices.end(), lambda.begin(),
 		 std::back_inserter(enum_lambda),
 		 [](int a, Float b) {return std::make_pair(a,b);});
   std::sort(enum_lambda.begin(), enum_lambda.end(), pairComparison);
@@ -82,6 +81,10 @@ public:
       sortedValue = value;
     }
 
+    for (int i = 0; i < numSamples; i++) {
+      c[i] = Float(0);
+    }
+
     const int len = lambda.size();
     for (int i = 0; i < len-1; i++) {
       Float l0 = sortedLambda[i];
@@ -124,11 +127,11 @@ public:
         Float t0 = lerp(v0, v1, minReg);
         Float t1 = lerp(v0, v1, maxReg);
 
-	c[i] += (t0 + t1)/Float(2)*(maxReg - minReg);
+        Float b0 = lerp(l0, l1, minReg);
+        Float b1 = lerp(l0, l1, maxReg);
+
+	c[i] += (t0 + t1)/Float(2)*(b1 - b0);
       }
-    }
-    for (auto& cc : c) {
-      std::cout << cc << std::endl;
     }
   }
 
@@ -184,6 +187,15 @@ public:
       }
     }
     return black;
+  }
+
+  __host__ __device__
+  Float totalPower() {
+    Float specPower = Float(0);
+    for (int i = 0; i < numSamples; i++) {
+      specPower += c[i];
+    }
+    return specPower;
   }
 
 private:

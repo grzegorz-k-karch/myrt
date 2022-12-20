@@ -33,4 +33,10 @@ target_link_libraries(myrt
   ${Boost_LIBRARIES}
   # ply_io
   # PNGwriter::PNGwriter
-)
+  )
+
+option(BUILD_TESTS "Build tests" ON)
+
+if(BUILD_TESTS)
+  add_subdirectory(test)
+endif()
