@@ -24,7 +24,6 @@ int main(int argc, char** argv)
     status = parseScene(programArgs.sceneFile, scene);
   }
 
-  Spectrum spec;
   
   // setup scene on device
   // render

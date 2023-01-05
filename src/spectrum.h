@@ -10,6 +10,11 @@
 #include "data_types.h"
 
 
+/// Range of wavelengths visible to human eye
+static const int lambdaMin = 400;
+static const int lambdaMax = 700;
+static const int numSpectralSamples = 60;
+
 static bool pairComparison(const std::pair<int, Float>& a,
 			   const std::pair<int, Float>& b)
 {
@@ -43,32 +48,99 @@ void sortSpectrum(const std::vector<Float> &lambda,
 }
 
 
-template <int numSamples>
-class MySpectrum {
-public:
-
-  /// Range of wavelengths visible to human eye
-  static const int lambdaMin = 400;
-  static const int lambdaMax = 700;
+template <int nSpectrumSamples>
+class CoefficientSpectrum {
+  public:
 
   /// Default constructor
   __host__ __device__
   MySpectrum(Float v = 0.0f) {
-    for (int i = 0; i < numSamples; i++) {
+    for (int i = 0; i < nSpectrumSamples; i++) {
       c[i] = v;
     }
   }
+
   /// Copy constructor
   __host__ __device__
   MySpectrum(const MySpectrum& other) {
-    for (int i = 0; i < numSamples; i++) {
+    for (int i = 0; i < nSpectrumSamples; i++) {
       c[i] = other.c[i];
     }
   }
 
+  /// Assignment operator
+  __host__ __device__
+  MySpectrum& operator=(const MySpectrum &other) {
+    if (this != other) {
+      for (int i = 0; i < nSpectrumSamples; i++) {
+        c[i] = other.c[i];
+      }
+    }
+    return this;
+  }
+
+  __host__ __device__
+  MySpectrum& operator+=(const MySpectrum &other) {
+    for (int i = 0; i < nSpectrumSamples; i++) {
+      c[i] += other.c[i];
+    }
+    return *this;
+  }
+  __host__ __device__
+  MySpectrum operator*=(const MySpectrum& other) {
+    for (int i = 0; i < nSpectrumSamples; i++) {
+      c[i] *= other.c[i];
+    }
+    return *this;
+  }
+  __host__ __device__
+  MySpectrum operator+(const MySpectrum &other) {
+    MySpectrum spec = *this;
+    for (int i = 0; i < nSpectrumSamples; i++) {
+      spec.c[i] += other.c[i];
+    }
+    return spec;
+  }
+  __host__ __device__
+  MySpectrum operator*(const MySpectrum& other) {
+    MySpectrum spec = *this;
+    for (int i = 0; i < nSpectrumSamples; i++) {
+      spec.c[i] *= other.c[i];
+    }
+    return spec;
+  }
+
+  __host__ __device__
+  bool isBlack() {
+    bool black = true;
+    for (int i = 0; i < nSpectrumSamples; i++) {
+      if (c[i] != Float(0)) {
+	black = false;
+	break;
+      }
+    }
+    return black;
+  }
+
+  __host__ __device__
+  Float totalPower() {
+    Float specPower = Float(0);
+    for (int i = 0; i < nSpectrumSamples; i++) {
+      specPower += c[i];
+    }
+    return specPower;
+  }
+
+protected:
+  Float c[nSpectrumSamples];
+};
+
+class VisibleSpectrum : public CoefficientSpectrum<numSpectralSamples> {
+public:
+
   /// This constructor computes samples from piecewise linear function defined
   /// by samples (lambda,value)
-  __host__ MySpectrum(const std::vector<Float>& lambda,
+  __host__ VisibleSpectrum(const std::vector<Float>& lambda,
 		      const std::vector<Float>& value) {
     std::vector<Float> sortedLambda;
     std::vector<Float> sortedValue;
@@ -134,77 +206,27 @@ public:
       }
     }
   }
-
-
-  /// Assignment operator
-  __host__ __device__
-  MySpectrum& operator=(const MySpectrum &other) {
-    if (this != other) {
-      for (int i = 0; i < numSamples; i++) {
-        c[i] = other.c[i];
-      }
-    }
-    return this;
-  }
-  __host__ __device__
-  MySpectrum& operator+=(const MySpectrum &other) {
-    for (int i = 0; i < numSamples; i++) {
-      c[i] += other.c[i];
-    }
-    return *this;
-  }
-  __host__ __device__
-  MySpectrum operator*=(const MySpectrum& other) {
-    for (int i = 0; i < numSamples; i++) {
-      c[i] *= other.c[i];
-    }
-    return *this;
-  }
-  __host__ __device__
-  MySpectrum operator+(const MySpectrum &other) {
-    MySpectrum spec = *this;
-    for (int i = 0; i < numSamples; i++) {
-      spec.c[i] += other.c[i];
-    }
-    return spec;
-  }
-  __host__ __device__
-  MySpectrum operator*(const MySpectrum& other) {
-    MySpectrum spec = *this;
-    for (int i = 0; i < numSamples; i++) {
-      spec.c[i] *= other.c[i];
-    }
-    return spec;
-  }
-
-  __host__ __device__
-  bool isBlack() {
-    bool black = true;
-    for (int i = 0; i < numSamples; i++) {
-      if (c[i] != Float(0)) {
-	black = false;
-	break;
-      }
-    }
-    return black;
-  }
-
-  __host__ __device__
-  Float totalPower() {
-    Float specPower = Float(0);
-    for (int i = 0; i < numSamples; i++) {
-      specPower += c[i];
-    }
-    return specPower;
-  }
-
-private:
-  Float c[numSamples];
 };
 
-static const int numSpectralSamples = 60;
+typedef VisibleSpectrum<numSpectralSamples> Spectrum;
 
-typedef MySpectrum<numSpectralSamples> Spectrum;
 
+class RGBSpectrum : public CoefficientSpectrum<3> {
+  
+};
+
+
+inline void XYZToRGB(const Float xyz[3], Float rgb[3]) {
+    rgb[0] = 3.240479f * xyz[0] - 1.537150f * xyz[1] - 0.498535f * xyz[2];
+    rgb[1] = -0.969256f * xyz[0] + 1.875991f * xyz[1] + 0.041556f * xyz[2];
+    rgb[2] = 0.055648f * xyz[0] - 0.204043f * xyz[1] + 1.057311f * xyz[2];
+}
+
+
+inline void RGBToXYZ(const Float rgb[3], Float xyz[3]) {
+    xyz[0] = 0.412453f * rgb[0] + 0.357580f * rgb[1] + 0.180423f * rgb[2];
+    xyz[1] = 0.212671f * rgb[0] + 0.715160f * rgb[1] + 0.072169f * rgb[2];
+    xyz[2] = 0.019334f * rgb[0] + 0.119193f * rgb[1] + 0.950227f * rgb[2];
+}
 
 #endif//SPECTRUM_H
