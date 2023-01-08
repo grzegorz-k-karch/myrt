@@ -13,39 +13,16 @@
 /// Range of wavelengths visible to human eye
 static const int lambdaMin = 400;
 static const int lambdaMax = 700;
-static const int numSpectralSamples = 60;
+static const int numVisibleSamples = 60;
 
 static bool pairComparison(const std::pair<int, Float>& a,
-			   const std::pair<int, Float>& b)
-{
-  return a.second < b.second;
-}
+			   const std::pair<int, Float>& b);
+  
 
 void sortSpectrum(const std::vector<Float> &lambda,
                   const std::vector<Float> &value,
 		  std::vector<Float> &sortedLambda,
-		  std::vector<Float> &sortedValue)
-{
-  std::vector<int> indices(lambda.size());
-  for (int i = 0; i < lambda.size(); i++) {
-    indices[i] = i;
-  }
-  std::vector<std::pair<int, Float>> enum_lambda;
-  enum_lambda.reserve(lambda.size());
-
-  std::transform(indices.begin(), indices.end(), lambda.begin(),
-		 std::back_inserter(enum_lambda),
-		 [](int a, Float b) {return std::make_pair(a,b);});
-  std::sort(enum_lambda.begin(), enum_lambda.end(), pairComparison);
-
-  sortedValue.reserve(lambda.size());
-  sortedLambda.reserve(lambda.size());
-  for (auto& el : enum_lambda) {
-    int idx = el.first;
-    sortedValue.push_back(value[idx]);
-    sortedLambda.push_back(lambda[idx]);
-  }
-}
+		  std::vector<Float> &sortedValue);
 
 
 template <int nSpectrumSamples>
@@ -54,7 +31,7 @@ class CoefficientSpectrum {
 
   /// Default constructor
   __host__ __device__
-  MySpectrum(Float v = 0.0f) {
+  CoefficientSpectrum(Float v = 0.0f) {
     for (int i = 0; i < nSpectrumSamples; i++) {
       c[i] = v;
     }
@@ -62,7 +39,7 @@ class CoefficientSpectrum {
 
   /// Copy constructor
   __host__ __device__
-  MySpectrum(const MySpectrum& other) {
+  CoefficientSpectrum(const CoefficientSpectrum& other) {
     for (int i = 0; i < nSpectrumSamples; i++) {
       c[i] = other.c[i];
     }
@@ -70,7 +47,7 @@ class CoefficientSpectrum {
 
   /// Assignment operator
   __host__ __device__
-  MySpectrum& operator=(const MySpectrum &other) {
+  CoefficientSpectrum& operator=(const CoefficientSpectrum &other) {
     if (this != other) {
       for (int i = 0; i < nSpectrumSamples; i++) {
         c[i] = other.c[i];
@@ -80,30 +57,30 @@ class CoefficientSpectrum {
   }
 
   __host__ __device__
-  MySpectrum& operator+=(const MySpectrum &other) {
+  CoefficientSpectrum& operator+=(const CoefficientSpectrum &other) {
     for (int i = 0; i < nSpectrumSamples; i++) {
       c[i] += other.c[i];
     }
     return *this;
   }
   __host__ __device__
-  MySpectrum operator*=(const MySpectrum& other) {
+  CoefficientSpectrum operator*=(const CoefficientSpectrum& other) {
     for (int i = 0; i < nSpectrumSamples; i++) {
       c[i] *= other.c[i];
     }
     return *this;
   }
   __host__ __device__
-  MySpectrum operator+(const MySpectrum &other) {
-    MySpectrum spec = *this;
+  CoefficientSpectrum operator+(const CoefficientSpectrum &other) {
+    CoefficientSpectrum spec = *this;
     for (int i = 0; i < nSpectrumSamples; i++) {
       spec.c[i] += other.c[i];
     }
     return spec;
   }
   __host__ __device__
-  MySpectrum operator*(const MySpectrum& other) {
-    MySpectrum spec = *this;
+  CoefficientSpectrum operator*(const CoefficientSpectrum& other) {
+    CoefficientSpectrum spec = *this;
     for (int i = 0; i < nSpectrumSamples; i++) {
       spec.c[i] *= other.c[i];
     }
@@ -135,13 +112,13 @@ protected:
   Float c[nSpectrumSamples];
 };
 
-class VisibleSpectrum : public CoefficientSpectrum<numSpectralSamples> {
+class VisibleSpectrum : public CoefficientSpectrum<numVisibleSamples> {
 public:
 
   /// This constructor computes samples from piecewise linear function defined
   /// by samples (lambda,value)
   __host__ VisibleSpectrum(const std::vector<Float>& lambda,
-		      const std::vector<Float>& value) {
+			   const std::vector<Float>& value) {
     std::vector<Float> sortedLambda;
     std::vector<Float> sortedValue;
     bool lambdaIsSorted = std::is_sorted(lambda.begin(), lambda.end());
@@ -153,7 +130,7 @@ public:
       sortedValue = value;
     }
 
-    for (int i = 0; i < numSamples; i++) {
+    for (int i = 0; i < numVisibleSamples; i++) {
       c[i] = Float(0);
     }
 
@@ -170,24 +147,24 @@ public:
       Float specLambda0 = lambdaMin;
       Float specLambda1 = lambdaMin;
 
-      while (idx0 < numSamples && specLambda0 < l0) {
+      while (idx0 < numVisibleSamples && specLambda0 < l0) {
 	idx0++;
-	specLambda0 = lerp(lambdaMin, lambdaMax, Float(idx0)/numSamples);
+	specLambda0 = lerp(lambdaMin, lambdaMax, Float(idx0)/numVisibleSamples);
       }
       idx0--;
-      while (idx1 < numSamples && specLambda1 < l1) {
+      while (idx1 < numVisibleSamples && specLambda1 < l1) {
       	idx1++;
-	specLambda1 = lerp(lambdaMin, lambdaMax, Float(idx1)/numSamples);
+	specLambda1 = lerp(lambdaMin, lambdaMax, Float(idx1)/numVisibleSamples);
       }
       idx1--;
 
       Float v0 = sortedValue[i];
       Float v1 = sortedValue[i+1];
 
-      const Float dc = (lambdaMax - lambdaMin)/numSamples;
+      const Float dc = (lambdaMax - lambdaMin)/numVisibleSamples;
 
       for (int i = idx0; i <= idx1; i++) {
-	Float specLambda = lerp(lambdaMin, lambdaMax, Float(i)/numSamples);
+	Float specLambda = lerp(lambdaMin, lambdaMax, Float(i)/numVisibleSamples);
       	/// Compute location of current coefficient range relative to
       	/// piece (l0, l1).
       	Float a = (specLambda - l0)/(l1 - l0);
@@ -206,20 +183,54 @@ public:
       }
     }
   }
+private:
+  static VisibleSpectrum X, Y, Z;
+  static VisibleSpectrum rgbRefl2SpectWhite, rgbRefl2SpectCyan;
+  static VisibleSpectrum rgbRefl2SpectMagenta, rgbRefl2SpectYellow;
+  static VisibleSpectrum rgbRefl2SpectRed, rgbRefl2SpectGreen;
+  static VisibleSpectrum rgbRefl2SpectBlue;
+  static VisibleSpectrum rgbIllum2SpectWhite, rgbIllum2SpectCyan;
+  static VisibleSpectrum rgbIllum2SpectMagenta, rgbIllum2SpectYellow;
+  static VisibleSpectrum rgbIllum2SpectRed, rgbIllum2SpectGreen;
+  static VisibleSpectrum rgbIllum2SpectBlue;
 };
 
-typedef VisibleSpectrum<numSpectralSamples> Spectrum;
+typedef VisibleSpectrum Spectrum;
 
 
 class RGBSpectrum : public CoefficientSpectrum<3> {
+  using CoefficientSpectrum<3>::c;
+
+public:
+  /// Default constructor
+  /// Call parent class constructior
+  RGBSpectrum(Float v = 0.f) : CoefficientSpectrum<3>(v) {}
   
 };
+
+
+RGBSpectrum createRGBSpectrumFromRGBFloats(const Float rgb[3])
+{
+  RGBSpectrum s;
+  s.c[0] = rgb[0];
+  s.c[1] = rgb[1];
+  s.c[2] = rgb[2];
+  return s;
+}
 
 
 inline void XYZToRGB(const Float xyz[3], Float rgb[3]) {
     rgb[0] = 3.240479f * xyz[0] - 1.537150f * xyz[1] - 0.498535f * xyz[2];
     rgb[1] = -0.969256f * xyz[0] + 1.875991f * xyz[1] + 0.041556f * xyz[2];
     rgb[2] = 0.055648f * xyz[0] - 0.204043f * xyz[1] + 1.057311f * xyz[2];
+}
+
+
+RGBSpectrum createRGBSpectrumFromXYZFloats(const Float xyz[3])
+{
+  RGBSpectrum s;
+  XYZToRGB(xyz, s.c);
+  return s;
 }
 
 
