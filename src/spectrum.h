@@ -8,6 +8,7 @@
 
 #include "external/cuda-samples/helper_math.h"
 #include "data_types.h"
+#include "util/statusCode.h"
 
 
 /// Range of wavelengths visible to human eye
@@ -17,7 +18,7 @@ static const int numVisibleSamples = 60;
 
 static bool pairComparison(const std::pair<int, Float>& a,
 			   const std::pair<int, Float>& b);
-  
+
 
 void sortSpectrum(const std::vector<Float> &lambda,
                   const std::vector<Float> &value,
@@ -48,12 +49,27 @@ class CoefficientSpectrum {
   /// Assignment operator
   __host__ __device__
   CoefficientSpectrum& operator=(const CoefficientSpectrum &other) {
-    if (this != other) {
+    if (*this != other) {
       for (int i = 0; i < nSpectrumSamples; i++) {
         c[i] = other.c[i];
       }
     }
-    return this;
+    return *this;
+  }
+
+  __host__ __device__
+  bool operator==(const CoefficientSpectrum &other) const {
+    for (int i = 0; i < nSpectrumSamples; ++i) {
+      if (c[i] != other.c[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  __host__ __device__
+  bool operator!=(const CoefficientSpectrum &other) const {
+    return !(*this == other);
   }
 
   __host__ __device__
@@ -112,13 +128,100 @@ protected:
   Float c[nSpectrumSamples];
 };
 
+
+static const int nCIESamples = 471;
+extern const Float CIE_X[nCIESamples];
+extern const Float CIE_Y[nCIESamples];
+extern const Float CIE_Z[nCIESamples];
+extern const Float CIE_lambda[nCIESamples];
+static const int nRGB2SpectSamples = 32;
+extern const Float RGB2SpectLambda[nRGB2SpectSamples];
+extern const Float RGBRefl2SpectWhite[nRGB2SpectSamples];
+extern const Float RGBRefl2SpectCyan[nRGB2SpectSamples];
+extern const Float RGBRefl2SpectMagenta[nRGB2SpectSamples];
+extern const Float RGBRefl2SpectYellow[nRGB2SpectSamples];
+extern const Float RGBRefl2SpectRed[nRGB2SpectSamples];
+extern const Float RGBRefl2SpectGreen[nRGB2SpectSamples];
+extern const Float RGBRefl2SpectBlue[nRGB2SpectSamples];
+extern const Float RGBIllum2SpectWhite[nRGB2SpectSamples];
+extern const Float RGBIllum2SpectCyan[nRGB2SpectSamples];
+extern const Float RGBIllum2SpectMagenta[nRGB2SpectSamples];
+extern const Float RGBIllum2SpectYellow[nRGB2SpectSamples];
+extern const Float RGBIllum2SpectRed[nRGB2SpectSamples];
+extern const Float RGBIllum2SpectGreen[nRGB2SpectSamples];
+extern const Float RGBIllum2SpectBlue[nRGB2SpectSamples];
+
+
 class VisibleSpectrum : public CoefficientSpectrum<numVisibleSamples> {
 public:
 
   /// This constructor computes samples from piecewise linear function defined
   /// by samples (lambda,value)
-  __host__ VisibleSpectrum(const std::vector<Float>& lambda,
-			   const std::vector<Float>& value) {
+  static StatusCode initSpectralData() {
+    StatusCode status = StatusCode::NoError;
+    std::vector<Float> CIE_lambda_vec(CIE_lambda, CIE_lambda + nCIESamples);
+    std::vector<Float> CIE_X_vec(CIE_X, CIE_X + nCIESamples);
+    std::vector<Float> CIE_Y_vec(CIE_Y, CIE_Y + nCIESamples);
+    std::vector<Float> CIE_Z_vec(CIE_Z, CIE_Z + nCIESamples);
+
+    X = createFromSpectrumArray(CIE_X_vec, CIE_lambda_vec);
+    Y = createFromSpectrumArray(CIE_Y_vec, CIE_lambda_vec);
+    Z = createFromSpectrumArray(CIE_Z_vec, CIE_lambda_vec);
+
+    std::vector<Float> RGB2SpectLambda_vec(RGB2SpectLambda,
+					   RGB2SpectLambda + nRGB2SpectSamples);
+    std::vector<Float> RGBRefl2SpectWhite_vec(RGBRefl2SpectWhite,
+					      RGBRefl2SpectWhite + nRGB2SpectSamples);
+    std::vector<Float> RGBRefl2SpectCyan_vec(RGBRefl2SpectCyan,
+					     RGBRefl2SpectCyan + nRGB2SpectSamples);
+    std::vector<Float> RGBRefl2SpectMagenta_vec(RGBRefl2SpectMagenta,
+						RGBRefl2SpectMagenta + nRGB2SpectSamples);
+    std::vector<Float> RGBRefl2SpectYellow_vec(RGBRefl2SpectYellow,
+					       RGBRefl2SpectYellow + nRGB2SpectSamples);
+    std::vector<Float> RGBRefl2SpectRed_vec(RGBRefl2SpectRed,
+					    RGBRefl2SpectRed + nRGB2SpectSamples);
+    std::vector<Float> RGBRefl2SpectGreen_vec(RGBRefl2SpectGreen,
+					      RGBRefl2SpectGreen + nRGB2SpectSamples);
+    std::vector<Float> RGBRefl2SpectBlue_vec(RGBRefl2SpectBlue,
+					     RGBRefl2SpectBlue + nRGB2SpectSamples);
+    std::vector<Float> RGBIllum2SpectWhite_vec(RGBIllum2SpectWhite,
+					       RGBIllum2SpectWhite + nRGB2SpectSamples);
+    std::vector<Float> RGBIllum2SpectCyan_vec(RGBIllum2SpectCyan,
+					      RGBIllum2SpectCyan + nRGB2SpectSamples);
+    std::vector<Float> RGBIllum2SpectMagenta_vec(RGBIllum2SpectMagenta,
+						 RGBIllum2SpectMagenta + nRGB2SpectSamples);
+    std::vector<Float> RGBIllum2SpectYellow_vec(RGBIllum2SpectYellow,
+						RGBIllum2SpectYellow + nRGB2SpectSamples);
+    std::vector<Float> RGBIllum2SpectRed_vec(RGBIllum2SpectRed,
+					     RGBIllum2SpectRed + nRGB2SpectSamples);
+    std::vector<Float> RGBIllum2SpectGreen_vec(RGBIllum2SpectGreen,
+					       RGBIllum2SpectGreen + nRGB2SpectSamples);
+    std::vector<Float> RGBIllum2SpectBlue_vec(RGBIllum2SpectBlue,
+					      RGBIllum2SpectBlue + nRGB2SpectSamples);
+
+    rgbRefl2SpectWhite = createFromSpectrumArray(RGB2SpectLambda_vec, RGBRefl2SpectWhite_vec);
+    rgbRefl2SpectCyan = createFromSpectrumArray(RGB2SpectLambda_vec, RGBRefl2SpectCyan_vec);
+    rgbRefl2SpectMagenta = createFromSpectrumArray(RGB2SpectLambda_vec, RGBRefl2SpectMagenta_vec);
+    rgbRefl2SpectYellow = createFromSpectrumArray(RGB2SpectLambda_vec, RGBRefl2SpectYellow_vec);
+    rgbRefl2SpectRed = createFromSpectrumArray(RGB2SpectLambda_vec, RGBRefl2SpectRed_vec);
+    rgbRefl2SpectGreen = createFromSpectrumArray(RGB2SpectLambda_vec, RGBRefl2SpectGreen_vec);
+    rgbRefl2SpectBlue = createFromSpectrumArray(RGB2SpectLambda_vec, RGBRefl2SpectBlue_vec);
+
+    rgbIllum2SpectWhite = createFromSpectrumArray(RGB2SpectLambda_vec, RGBIllum2SpectWhite_vec);
+    rgbIllum2SpectCyan = createFromSpectrumArray(RGB2SpectLambda_vec, RGBIllum2SpectCyan_vec);
+    rgbIllum2SpectMagenta = createFromSpectrumArray(RGB2SpectLambda_vec, RGBIllum2SpectMagenta_vec);
+    rgbIllum2SpectYellow = createFromSpectrumArray(RGB2SpectLambda_vec, RGBIllum2SpectYellow_vec);
+    rgbIllum2SpectRed = createFromSpectrumArray(RGB2SpectLambda_vec, RGBIllum2SpectRed_vec);
+    rgbIllum2SpectGreen = createFromSpectrumArray(RGB2SpectLambda_vec, RGBIllum2SpectGreen_vec);
+    rgbIllum2SpectBlue = createFromSpectrumArray(RGB2SpectLambda_vec, RGBIllum2SpectBlue_vec);
+
+    return status;
+  }
+
+  static VisibleSpectrum createFromSpectrumArray(
+						 const std::vector<Float>& lambda,
+						 const std::vector<Float>& value) {
+    VisibleSpectrum s;
     std::vector<Float> sortedLambda;
     std::vector<Float> sortedValue;
     bool lambdaIsSorted = std::is_sorted(lambda.begin(), lambda.end());
@@ -131,7 +234,7 @@ public:
     }
 
     for (int i = 0; i < numVisibleSamples; i++) {
-      c[i] = Float(0);
+      s.c[i] = Float(0);
     }
 
     const int len = lambda.size();
@@ -179,9 +282,10 @@ public:
         Float b0 = lerp(l0, l1, minReg);
         Float b1 = lerp(l0, l1, maxReg);
 
-	c[i] += (t0 + t1)/Float(2)*(b1 - b0);
+	s.c[i] += (t0 + t1)/Float(2)*(b1 - b0);
       }
     }
+    return s;
   }
 private:
   static VisibleSpectrum X, Y, Z;
@@ -195,49 +299,47 @@ private:
   static VisibleSpectrum rgbIllum2SpectBlue;
 };
 
+
+// inline void XYZToRGB(const Float xyz[3], Float rgb[3]) {
+//     rgb[0] = 3.240479f * xyz[0] - 1.537150f * xyz[1] - 0.498535f * xyz[2];
+//     rgb[1] = -0.969256f * xyz[0] + 1.875991f * xyz[1] + 0.041556f * xyz[2];
+//     rgb[2] = 0.055648f * xyz[0] - 0.204043f * xyz[1] + 1.057311f * xyz[2];
+// }
+
+
+// class RGBSpectrum : public CoefficientSpectrum<3> {
+//   using CoefficientSpectrum<3>::c;
+
+// public:
+//   /// Default constructor
+//   /// Call parent class constructior
+//   RGBSpectrum(Float v = 0.f) : CoefficientSpectrum<3>(v) {}
+
+//   static RGBSpectrum createFromRGBFloats(const Float rgb[3])
+//   {
+//     RGBSpectrum s;
+//     s.c[0] = rgb[0];
+//     s.c[1] = rgb[1];
+//     s.c[2] = rgb[2];
+//     return s;
+//   }
+
+//   static RGBSpectrum createFromXYZFloats(const Float xyz[3])
+//   {
+//     RGBSpectrum s;
+//     XYZToRGB(xyz, s.c);
+//     return s;
+//   }
+// };
+
+
+// inline void RGBToXYZ(const Float rgb[3], Float xyz[3]) {
+//     xyz[0] = 0.412453f * rgb[0] + 0.357580f * rgb[1] + 0.180423f * rgb[2];
+//     xyz[1] = 0.212671f * rgb[0] + 0.715160f * rgb[1] + 0.072169f * rgb[2];
+//     xyz[2] = 0.019334f * rgb[0] + 0.119193f * rgb[1] + 0.950227f * rgb[2];
+// }
+
+
 typedef VisibleSpectrum Spectrum;
-
-
-class RGBSpectrum : public CoefficientSpectrum<3> {
-  using CoefficientSpectrum<3>::c;
-
-public:
-  /// Default constructor
-  /// Call parent class constructior
-  RGBSpectrum(Float v = 0.f) : CoefficientSpectrum<3>(v) {}
-  
-};
-
-
-RGBSpectrum createRGBSpectrumFromRGBFloats(const Float rgb[3])
-{
-  RGBSpectrum s;
-  s.c[0] = rgb[0];
-  s.c[1] = rgb[1];
-  s.c[2] = rgb[2];
-  return s;
-}
-
-
-inline void XYZToRGB(const Float xyz[3], Float rgb[3]) {
-    rgb[0] = 3.240479f * xyz[0] - 1.537150f * xyz[1] - 0.498535f * xyz[2];
-    rgb[1] = -0.969256f * xyz[0] + 1.875991f * xyz[1] + 0.041556f * xyz[2];
-    rgb[2] = 0.055648f * xyz[0] - 0.204043f * xyz[1] + 1.057311f * xyz[2];
-}
-
-
-RGBSpectrum createRGBSpectrumFromXYZFloats(const Float xyz[3])
-{
-  RGBSpectrum s;
-  XYZToRGB(xyz, s.c);
-  return s;
-}
-
-
-inline void RGBToXYZ(const Float rgb[3], Float xyz[3]) {
-    xyz[0] = 0.412453f * rgb[0] + 0.357580f * rgb[1] + 0.180423f * rgb[2];
-    xyz[1] = 0.212671f * rgb[0] + 0.715160f * rgb[1] + 0.072169f * rgb[2];
-    xyz[2] = 0.019334f * rgb[0] + 0.119193f * rgb[1] + 0.950227f * rgb[2];
-}
 
 #endif//SPECTRUM_H
