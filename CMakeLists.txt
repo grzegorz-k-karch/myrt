@@ -4,6 +4,7 @@ project(myrt LANGUAGES CXX CUDA)
 
 find_package(Boost 1.74 REQUIRED COMPONENTS log_setup log)
 find_package(PNGwriter 0.7.0)
+find_package(Microsoft.GSL CONFIG REQUIRED)
 
 # resolves error:
 # /usr/include/c++/11/cstdlib:75:15: fatal error: stdlib.h: No such file or directory
@@ -28,12 +29,16 @@ target_include_directories(myrt PRIVATE ${CMAKE_SOURCE_DIR}/src/external/)
 # target_include_directories(myrt PRIVATE ${CMAKE_SOURCE_DIR}/src/external/ply_io/include)
 # target_link_directories(myrt PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/external/ply_io/build)
 
-target_link_libraries(myrt
+target_link_libraries(myrt 
   boost_program_options
   ${Boost_LIBRARIES}
   # ply_io
   # PNGwriter::PNGwriter
-  )
+  Microsoft.GSL::GSL
+)
+
+# target_link_libraries(myrt PRIVATE Microsoft.GSL::GSL)
+
 
 option(BUILD_TESTS "Build tests" ON)
 

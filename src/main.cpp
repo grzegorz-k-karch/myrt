@@ -1,3 +1,4 @@
+#include <gsl/gsl>
 #include <iostream>
 #include "util/programArgs.h"
 #include "util/statusCode.h"
